@@ -13,6 +13,8 @@ import com.start.pager.usersOnBoarding.repository.RoleRepository;
 import com.start.pager.usersOnBoarding.repository.UserRepository;
 import com.start.pager.usersOnBoarding.service.UserDetailsImpl;
 import io.micrometer.common.util.StringUtils;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -20,6 +22,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.web.authentication.logout.SecurityContextLogoutHandler;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashSet;
@@ -126,5 +129,14 @@ public class AuthController {
         userRepository.save(user);
         saveAudit("/api/auth/signin", "account created success " + user.getUsername());
         return ResponseEntity.ok(new MessageResponse("User registered successfully!"));
+    }
+
+    @PostMapping("/logout")
+    public ResponseEntity<String> logout(HttpServletRequest request, HttpServletResponse response, Authentication authentication) {
+        if (authentication != null) {
+            new SecurityContextLogoutHandler().logout(request, response, authentication);
+            return ResponseEntity.ok("Logout successful!");
+        }
+        return ResponseEntity.badRequest().body("You are not logged in!");
     }
 }

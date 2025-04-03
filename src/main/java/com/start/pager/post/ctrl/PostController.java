@@ -60,7 +60,7 @@ public class PostController {
     // ✅ Like/Unlike Post
     @PostMapping("/posts/{postId}/like")
     public ResponseEntity<?> likeOrUnlikePost(@PathVariable Long postId,@AuthenticationPrincipal UserDetails userDetails) {
-        Optional<User> userOptional = userRepository.findByUsername(userDetails.getPassword());
+        Optional<User> userOptional = userRepository.findByUsername(userDetails.getUsername());
         Optional<Post> postOptional = postRepository.findById(postId);
 
         if (userOptional.isEmpty() || postOptional.isEmpty()) {
@@ -85,55 +85,32 @@ public class PostController {
     @PostMapping("/posts/{postId}/comment")
     public ResponseEntity<?> addComment(@PathVariable Long postId, @RequestBody Comment comment
     ,@AuthenticationPrincipal UserDetails userDetails) {
-        Optional<User> userOptional = userRepository.findByUsername(userDetails.getPassword());
-        Optional<Post> postOptional = postRepository.findById(postId);
-
-        if (userOptional.isEmpty() || postOptional.isEmpty()) {
-            return ResponseEntity.badRequest().body("User or Post not found");
-        }
-
-        comment.setUser(userOptional.get());
-        comment.setPost(postOptional.get());
-        comment.setCreatedAt(new Timestamp(System.currentTimeMillis()));
-        commentRepository.save(comment);
-
+        ResponseEntity<String> response = postService.addComments(postId, comment, userDetails);
+        if (response != null) return response;
         return ResponseEntity.ok("Comment added successfully");
     }
+
+
 
     // ✅ Share Post
     @PostMapping("/posts/{postId}/share")
     public ResponseEntity<?> sharePost(@PathVariable Long postId,
                                        @AuthenticationPrincipal UserDetails userDetails) {
-        Optional<User> userOptional = userRepository.findByUsername(userDetails.getPassword());
-        Optional<Post> postOptional = postRepository.findById(postId);
-
-        if (userOptional.isEmpty() || postOptional.isEmpty()) {
-            return ResponseEntity.badRequest().body("User or Post not found");
-        }
-
-        Share share = new Share();
-        share.setUser(userOptional.get());
-        share.setPost(postOptional.get());
-        share.setSharedAt(new Timestamp(System.currentTimeMillis()));
-        shareRepository.save(share);
-
-        // Add to User Feed
-        UserFeed feed = new UserFeed();
-        feed.setUser(userOptional.get());
-        feed.setPost(postOptional.get());
-        feed.setShared(true);
-        feed.setCreatedAt(new Timestamp(System.currentTimeMillis()));
-        userFeedRepository.save(feed);
-
+        ResponseEntity<String> response = postService.shareThePost(postId, userDetails);
+        if (response != null) return response;
         return ResponseEntity.ok("Post shared successfully");
     }
+
+
 
     // ✅ Get Comments for a Post
     @GetMapping("/posts/{postId}/comments")
     public ResponseEntity<List<Comment>> getComments(@PathVariable Long postId, @AuthenticationPrincipal UserDetails userDetails) {
-        List<Comment> comments = commentRepository.findByPost_PostId(postId);
+        List<Comment> comments = postService.getComments(postId);
         return ResponseEntity.ok(comments);
     }
+
+
 
     // ✅ Get Likes Count for a Post
     @GetMapping("/posts/{postId}/likes")
